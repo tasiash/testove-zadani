@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Keyphrase Input</title>
+</head>
+<body>
+
+<!-- Заголовок страницы -->
+<h1>Enter your keyphrase</h1>
+
+<!-- Поле ввода ключевой фразы -->
+<input type="text" id="userInput" placeholder="Type here...">
+
+<!-- Кнопка запуска поиска -->
+<button onclick="processInput()">Submit</button>
+
+<!-- Кнопка сохранения JSON (изначально отключена) -->
+<button id="saveBtn" onclick="saveJson()" disabled>Save JSON</button>
+
+<!-- Блок, куда будем выводить результаты -->
+<p id="displayMessage"></p>
+
+<script>
+
+    // Переменная для хранения последнего успешного запроса
+    // Нужна, чтобы потом передать его в /api/export
+    let lastQuery = "";
+
+    // Главная функция — вызывается при нажатии Submit
+    async function processInput() {
+
+        // Берем текст из input и убираем лишние пробелы
+        var userText = document.getElementById("userInput").value.trim();
+
+        // Если пользователь ничего не ввёл — показываем сообщение
+        if (!userText) {
+            document.getElementById("displayMessage").innerHTML = "Please type something.";
+            return;
+        }
+
+        // Показываем "Loading..."
+        document.getElementById("displayMessage").innerHTML = "Loading...";
+
+        // Блокируем кнопку Save, пока поиск не завершён
+        document.getElementById("saveBtn").disabled = true;
+
+        try {
+            // Отправляем GET-запрос на наш backend
+            // encodeURIComponent защищает от спецсимволов
+            const resp = await fetch("/api/search?q=" + encodeURIComponent(userText));
+
+            // Преобразуем ответ в JSON
+            const data = await resp.json();
+
+            // Если сервер вернул ошибку (например 400 или 500)
+            if (!resp.ok) {
+                document.getElementById("displayMessage").innerHTML =
+                    "Error: " + (data.error || "unknown");
+                return;
+            }
+
+            // Сохраняем последний успешный запрос
+            lastQuery = data.query;
+
+            // Разблокируем кнопку Save JSON
+            document.getElementById("saveBtn").disabled = false;
+
+            // Начинаем формировать HTML для вывода результатов
+            let html = "<h3>Results:</h3>";
+
+            // Проходим по массиву результатов
+            data.results.forEach(item => {
+                html += `
+                    <div style="margin-bottom:15px;">
+                        <strong>${escapeHtml(item.title)}</strong><br>
+                        <a href="${escapeAttr(item.url)}" target="_blank">
+                            ${escapeHtml(item.url)}
+                        </a><br>
+                        <p>${escapeHtml(item.description)}</p>
+                    </div>
+                `;
+            });
+
+            // Вставляем сформированный HTML на страницу
+            document.getElementById("displayMessage").innerHTML = html;
+
+            // Логируем результаты в консоль (для отладки)
+            console.log("Results:", data.results);
+
+        } catch (e) {
+            // Если произошла ошибка сети или сервера
+            document.getElementById("displayMessage").innerHTML =
+                "Server/network error.";
+        }
+    }
+
+    // Функция скачивания JSON-файла
+    function saveJson() {
+
+        // Если запроса ещё не было — ничего не делаем
+        if (!lastQuery) return;
+
+        // Переходим на endpoint /api/export
+        // Сервер вернет файл results.json
+        window.location.href =
+            "/api/export?q=" + encodeURIComponent(lastQuery);
+    }
+
+    // Функция экранирования HTML
+    // Защищает от XSS-атак (например если в title есть <script>)
+    function escapeHtml(s) {
+        return String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    // То же самое для атрибутов (например href)
+    function escapeAttr(s) {
+        return escapeHtml(s);
+    }
+
+</script>
+
+</body>
+</html>
