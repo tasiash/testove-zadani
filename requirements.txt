@@ -1,4 +1,6 @@
 Flask
 requests
 python-dotenv
+
 pytest
+gunicorn
