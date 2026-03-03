@@ -7,7 +7,7 @@ import requests
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="public", static_url_path="")
+app = Flask(__name__, static_folder=".", static_url_path="")
 
 #GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 #CSE_ID = os.getenv("GOOGLE_CSE_ID")
@@ -128,3 +128,4 @@ def api_export():
 if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=PORT, debug=True)
+
