@@ -15,7 +15,7 @@ app = Flask(__name__, static_folder="public", static_url_path="")
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 PROVIDER = (os.getenv("PROVIDER") or "serpapi").lower()
 
-PORT = int(os.getenv("PORT", "3000"))
+PORT = int(os.getenv("PORT", "10000"))
 
 # удвление пустого запроса
 def validate_query(q):
@@ -126,4 +126,5 @@ def api_export():
         return jsonify({"error": "Export failed", "details": str(e)}), 500
 
 if __name__ == "__main__":
+
     app.run(host="0.0.0.0", port=PORT, debug=True)
